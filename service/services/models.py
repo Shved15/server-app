@@ -3,6 +3,8 @@ from django.db import models
 
 from clients.models import Client
 
+from services.tasks import set_price
+
 
 # Create your models here.
 class Service(models.Model):
@@ -25,3 +27,9 @@ class Subscription(models.Model):
     client = models.ForeignKey(Client, related_name='subscriptions', on_delete=models.PROTECT)
     service = models.ForeignKey(Service, related_name='subscriptions', on_delete=models.PROTECT)
     plan = models.ForeignKey(Plan, related_name='subscriptions', on_delete=models.PROTECT)
+    price = models.PositiveIntegerField(default=0)
+
+    def save(self,  *args, save_model=True,  **kwargs):
+        if save_model:
+            set_price.delay(self.id)
+        return super().save(*args, **kwargs)
